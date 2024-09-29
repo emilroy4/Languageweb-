@@ -1,11 +1,12 @@
 import formidable from 'formidable';
 import fs from 'fs';
-import sharp from 'sharp';
 import { OpenAI } from 'openai';
 
 export const config = {
   api: {
-    bodyParser: false, // This is important to handle the file upload manually
+    bodyParser: {
+      sizeLimit: '10mb', // Set the payload size limit to 10 MB
+    },
   },
 };
 
@@ -19,17 +20,11 @@ export default async function handler(req, res) {
       }
 
       try {
-        const file = files.file[0]; // Access the first file
+        const file = files.file[0]; // Access the first file in the array
         const imagePath = file.filepath || file.path; // Path of the uploaded file
         const imageBuffer = fs.readFileSync(imagePath);
 
-        // Resize the image using sharp to reduce size and quality
-        const resizedImageBuffer = await sharp(imageBuffer)
-          .resize({ width: 800 }) // Resize image to a max width of 800px
-          .jpeg({ quality: 80 }) // Lower quality to 80% to reduce size
-          .toBuffer();
-
-        const imageBase64 = resizedImageBuffer.toString('base64');
+        const imageBase64 = imageBuffer.toString('base64');
         const language = fields.language;
 
         // Send the resized image to GPT-4 for object recognition
