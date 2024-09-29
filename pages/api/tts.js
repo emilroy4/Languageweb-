@@ -1,32 +1,34 @@
-const textToSpeech = require('@google-cloud/text-to-speech');
-const util = require('util');
+import { TextToSpeechClient } from '@google-cloud/text-to-speech';
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { text, languageCode } = req.body;
+  try {
+    // Decode the Base64 string from the environment variable
+    const base64Credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
+    const decodedCredentials = Buffer.from(base64Credentials, 'base64').toString('utf8');
 
-    // Creates a client
-    const client = new textToSpeech.TextToSpeechClient();
+    // Save the credentials to a temporary location
+    const credentialsPath = path.join('/tmp', 'tts-credentials.json');
+    fs.writeFileSync(credentialsPath, decodedCredentials);
 
-    // Construct the request
+    // Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to point to the temp file
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
+
+    const client = new TextToSpeechClient();
+
     const request = {
-      input: { text: text },
-      voice: { languageCode: languageCode, ssmlGender: 'NEUTRAL' },
+      input: { text: req.body.text },
+      voice: { languageCode: req.body.languageCode, ssmlGender: 'NEUTRAL' },
       audioConfig: { audioEncoding: 'MP3' },
     };
 
-    try {
-      // Performs the Text-to-Speech request
-      const [response] = await client.synthesizeSpeech(request);
+    const [response] = await client.synthesizeSpeech(request);
+    const audioContent = response.audioContent.toString('base64');
 
-      // Return base64-encoded audio content instead of writing to a file
-      const audioBase64 = Buffer.from(response.audioContent, 'binary').toString('base64');
-      res.status(200).json({ audioBase64 });
-    } catch (error) {
-      console.error('ERROR:', error);
-      res.status(500).json({ error: 'Text-to-Speech failed' });
-    }
-  } else {
-    res.status(405).json({ message: 'Only POST requests allowed' });
+    res.status(200).json({ audioBase64: audioContent });
+  } catch (error) {
+    console.error('Error with TTS:', error);
+    res.status(500).json({ error: 'Error processing text-to-speech' });
   }
 }
