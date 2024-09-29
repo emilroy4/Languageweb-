@@ -96,7 +96,7 @@ export default function ImageUploadForm() {
           <option value="zh">🇨🇳 Chinese</option>
           <option value="hi">🇮🇳 Hindi</option>
         </select>
-        <button type="submit">Translate</button>
+        <button type="submit">Identify</button>
       </form>
 
       {imagePreview && (
