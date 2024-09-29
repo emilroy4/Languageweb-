@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^5.4.0",
     "browser-image-compression": "^2.0.2",
     "formidable": "^3.5.1",
     "heic2any": "^0.0.4",
