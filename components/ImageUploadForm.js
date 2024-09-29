@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import imageCompression from 'browser-image-compression';
 
 export default function ImageUploadForm() {
@@ -9,19 +9,16 @@ export default function ImageUploadForm() {
   const handleImageUpload = async (e) => {
     const imageFile = e.target.files[0];
 
-    // Compression options
+    // Compression options (from earlier)
     const options = {
-      maxSizeMB: 1, // Max file size of 1 MB
-      maxWidthOrHeight: 800, // Max width/height of 800px
-      useWebWorker: true, // Enable web worker for performance
+      maxSizeMB: 1,
+      maxWidthOrHeight: 800,
+      useWebWorker: true,
     };
 
     try {
-      // Compress the image
       const compressedImage = await imageCompression(imageFile, options);
-      console.log('Compressed image:', compressedImage);
-
-      setImage(compressedImage); // Set compressed image for further processing
+      setImage(compressedImage);
     } catch (error) {
       console.log('Error during image compression:', error);
     }
@@ -42,7 +39,17 @@ export default function ImageUploadForm() {
 
       const data = await res.json();
       setTranslation(data.translation);
+
+      // Trigger Text-to-Speech after translation
+      speakTranslation(data.translation);
     }
+  };
+
+  // Text-to-Speech function
+  const speakTranslation = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language === 'en' ? 'en-US' : language; // You can customize the language based on user selection
+    speechSynthesis.speak(utterance);
   };
 
   return (
@@ -58,7 +65,12 @@ export default function ImageUploadForm() {
         </select>
         <button type="submit">Translate</button>
       </form>
-      {translation && <p>Translated: {translation}</p>}
+      {translation && (
+        <div>
+          <p>Translated: {translation}</p>
+          <button onClick={() => speakTranslation(translation)}>Play Translation</button>
+        </div>
+      )}
     </div>
   );
 }
